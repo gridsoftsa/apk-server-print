@@ -28,19 +28,41 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
         
-        statusText = findViewById(R.id.statusText);
-        mainHandler = new Handler(Looper.getMainLooper());
-        
-        // Inicializar el manejador USB
-        usbPrinterManager = new UsbPrinterManager(this);
-        
-        // Iniciar el servidor HTTP
-        startHttpServer();
-        
-        // Mostrar mensaje de bienvenida
-        showToast("Aplicación Puente iniciada");
+        try {
+            setContentView(R.layout.activity_main);
+            
+            statusText = findViewById(R.id.statusText);
+            if (statusText == null) {
+                Log.e(TAG, "statusText no encontrado en layout");
+                finish();
+                return;
+            }
+            
+            mainHandler = new Handler(Looper.getMainLooper());
+            
+            // Inicializar el manejador USB con manejo de errores
+            try {
+                usbPrinterManager = new UsbPrinterManager(this);
+                Log.d(TAG, "UsbPrinterManager inicializado correctamente");
+            } catch (Exception e) {
+                Log.e(TAG, "Error inicializando UsbPrinterManager", e);
+                updateStatus("❌ Error inicializando USB: " + e.getMessage());
+            }
+            
+            // Iniciar el servidor HTTP
+            startHttpServer();
+            
+            // Mostrar mensaje de bienvenida
+            showToast("Aplicación Puente iniciada");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error fatal en onCreate", e);
+            if (statusText != null) {
+                updateStatus("❌ Error fatal: " + e.getMessage());
+            }
+            // No cerrar la app, solo mostrar error
+        }
     }
 
     private void startHttpServer() {
@@ -59,11 +81,41 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateStatus(String message) {
-        mainHandler.post(() -> statusText.setText(message));
+        try {
+            if (mainHandler != null && statusText != null) {
+                mainHandler.post(() -> {
+                    try {
+                        statusText.setText(message);
+                        Log.d(TAG, "Status actualizado: " + message);
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error actualizando status UI", e);
+                    }
+                });
+            } else {
+                Log.w(TAG, "No se puede actualizar status - UI no inicializada: " + message);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error en updateStatus", e);
+        }
     }
 
     private void showToast(String message) {
-        mainHandler.post(() -> Toast.makeText(this, message, Toast.LENGTH_SHORT).show());
+        try {
+            if (mainHandler != null) {
+                mainHandler.post(() -> {
+                    try {
+                        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                        Log.d(TAG, "Toast mostrado: " + message);
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error mostrando toast", e);
+                    }
+                });
+            } else {
+                Log.w(TAG, "No se puede mostrar toast - Handler no inicializado: " + message);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error en showToast", e);
+        }
     }
 
     // Clase interna para el servidor HTTP
@@ -230,16 +282,32 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         
-        // Detener el servidor
-        if (server != null) {
-            server.stop();
-            Log.i(TAG, "Servidor HTTP detenido");
+        try {
+            // Detener el servidor
+            if (server != null) {
+                server.stop();
+                server = null;
+                Log.i(TAG, "Servidor HTTP detenido");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error deteniendo servidor", e);
         }
         
-        // Limpiar recursos USB
-        if (usbPrinterManager != null) {
-            usbPrinterManager.cleanup();
+        try {
+            // Limpiar recursos USB
+            if (usbPrinterManager != null) {
+                usbPrinterManager.cleanup();
+                usbPrinterManager = null;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error limpiando USB resources", e);
         }
+        
+        // Limpiar handler
+        mainHandler = null;
+        statusText = null;
+        
+        Log.d(TAG, "MainActivity destruida correctamente");
     }
 
     @Override

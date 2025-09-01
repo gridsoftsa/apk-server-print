@@ -10,6 +10,7 @@ import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbEndpoint;
 import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbManager;
+import android.hardware.usb.UsbConstants;
 import android.util.Log;
 
 import java.io.IOException;
@@ -126,7 +127,7 @@ public class UsbPrinterManager {
             // Buscar endpoint de salida (OUT)
             for (int i = 0; i < usbInterface.getEndpointCount(); i++) {
                 UsbEndpoint endpoint = usbInterface.getEndpoint(i);
-                if (endpoint.getDirection() == UsbEndpoint.ENDPOINT_DIRECTION_OUT) {
+                if (endpoint.getDirection() == UsbConstants.USB_DIR_OUT) {
                     endpointOut = endpoint;
                     break;
                 }
