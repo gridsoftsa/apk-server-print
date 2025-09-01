@@ -588,4 +588,7 @@ public class UsbPrinterManager {
         }
         disconnect();
     }
+
+    public void openCashDrawer() {
+    }
 }

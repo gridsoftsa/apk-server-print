@@ -216,24 +216,55 @@ public class POS3nStarPrinter {
      */
     public void connectUSB() {
         try {
-            if (useSDK) {
-                Log.d(TAG, "🎯 Intentando conexión con SDK 3nStar");
+            if (forceSDK || useSDK) {
+                Log.d(TAG, "🎯 Intentando conexión con SDK 3nStar (forceSDK=" + forceSDK + ")");
                 if (connectSDKUSB()) {
                     Log.d(TAG, "✅ Conectado exitosamente con SDK");
+                    return; // Salir exitosamente
                 } else {
-                    Log.w(TAG, "⚠️ SDK falló, usando fallback");
-                    useSDK = false;
-                    isConnected = fallbackPrinter.connectToPrinter();
-                    Log.d(TAG, isConnected ? "✅ Fallback: Conectado USB" : "❌ Fallback: Error USB");
+                    Log.w(TAG, "⚠️ SDK falló al conectar");
+                    if (forceSDK) {
+                        Log.e(TAG, "❌ SDK forzado pero falló - no usar fallback");
+                        isConnected = false;
+                        return; // No usar fallback si está forzado
+                    } else {
+                        Log.w(TAG, "🔄 Cambiando a fallback...");
+                        useSDK = false;
+                    }
                 }
-            } else {
-                // Usar sistema fallback
+            }
+            
+            // Usar sistema fallback (solo si SDK no está forzado)
+            if (!forceSDK) {
+                Log.d(TAG, "🔄 Usando sistema fallback...");
                 isConnected = fallbackPrinter.connectToPrinter();
                 Log.d(TAG, isConnected ? "✅ Fallback: Conectado USB" : "❌ Fallback: Error USB");
             }
         } catch (Exception e) {
             Log.e(TAG, "❌ Error en conexión USB: " + e.getMessage());
+            isConnected = false;
         }
+    }
+    
+    /**
+     * 🔌 Asegurar conexión antes de imprimir
+     */
+    private boolean ensureConnection() {
+        if (isConnected && ((forceSDK && posPrinter != null) || (!forceSDK && fallbackPrinter != null))) {
+            Log.d(TAG, "✅ Conexión ya establecida");
+            return true;
+        }
+        
+        Log.d(TAG, "🔌 Estableciendo conexión automática...");
+        connectUSB();
+        
+        // Verificar si la conexión fue exitosa
+        boolean connected = isConnected && 
+                           ((forceSDK && posPrinter != null) || 
+                            (!forceSDK && (posPrinter != null || fallbackPrinter != null)));
+        
+        Log.d(TAG, connected ? "✅ Conexión establecida" : "❌ Fallo al conectar");
+        return connected;
     }
     
     /**
@@ -289,8 +320,9 @@ public class POS3nStarPrinter {
      * Usa SDK 3nStar cuando esté disponible, fallback al sistema anterior
      */
     public boolean printInvoice(String jsonData, int paperWidth, boolean openCash) {
-        if (!isConnected()) {
-            Log.e(TAG, "❌ Impresora no conectada");
+        // 🔌 Asegurar conexión antes de imprimir
+        if (!ensureConnection()) {
+            Log.e(TAG, "❌ No se pudo establecer conexión para imprimir factura");
             return false;
         }
         
@@ -700,8 +732,9 @@ public class POS3nStarPrinter {
      * 🧪 Método de prueba para QR (híbrido)
      */
     public void testPrintQR(String qrText) {
-        if (!isConnected()) {
-            Log.e(TAG, "❌ Impresora no conectada para test QR");
+        // 🔌 Asegurar conexión antes de imprimir
+        if (!ensureConnection()) {
+            Log.e(TAG, "❌ No se pudo establecer conexión para test QR");
             return;
         }
         
@@ -759,8 +792,9 @@ public class POS3nStarPrinter {
      * 🧪 Método de prueba para texto centrado (híbrido)
      */
     public void testPrintText() {
-        if (!isConnected()) {
-            Log.e(TAG, "❌ Impresora no conectada para test texto");
+        // 🔌 Asegurar conexión antes de imprimir
+        if (!ensureConnection()) {
+            Log.e(TAG, "❌ No se pudo establecer conexión para test texto");
             return;
         }
         
@@ -881,4 +915,77 @@ public class POS3nStarPrinter {
             Log.e(TAG, "❌ Error desconectando: " + e.getMessage());
         }
     }
+    
+    /**
+     * 💰 Abrir caja registradora usando SDK 3nStar
+     */
+    public boolean openCashDrawerWithSDK() {
+        try {
+            // 🔌 Asegurar conexión antes de abrir caja
+            if (!ensureConnection()) {
+                Log.w(TAG, "⚠️ No se pudo conectar para abrir caja con SDK");
+                return false;
+            }
+            
+            if (!sdkInitialized || posPrinter == null) {
+                Log.w(TAG, "⚠️ SDK no inicializado para abrir caja");
+                return false;
+            }
+            
+            Log.d(TAG, "💰 Abriendo caja con SDK 3nStar...");
+            
+            // Inicializar impresora y abrir caja
+            posPrinter.initializePrinter();
+            posPrinter.openCashBox(POSConst.PIN_TWO);
+            
+            Log.d(TAG, "💰 ✅ Comando de apertura de caja enviado con SDK");
+            return true;
+            
+        } catch (Exception e) {
+            Log.e(TAG, "💰 ❌ Error abriendo caja con SDK: " + e.getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * 💰 Abrir caja registradora usando ESC/POS estándar
+     */
+    public boolean openCashDrawerWithESCPOS() {
+        try {
+            // 🔌 Asegurar conexión antes de abrir caja
+            if (!ensureConnection()) {
+                Log.w(TAG, "⚠️ No se pudo conectar para abrir caja con ESC/POS");
+                return false;
+            }
+            
+            Log.d(TAG, "💰 Abriendo caja con ESC/POS...");
+            
+            // Comando ESC/POS para abrir caja registradora
+            // ESC p m t1 t2 - Comando estándar de apertura de caja
+            byte[] openDrawerCommand = new byte[]{
+                0x1B, 0x70, 0x00, 0x19, (byte) 0xFA  // ESC p 0 25 250
+            };
+            
+            if (fallbackPrinter != null) {
+                try {
+                    fallbackPrinter.sendRawData(openDrawerCommand);
+                    Log.d(TAG, "💰 ✅ Comando ESC/POS de caja enviado");
+                    return true;
+                } catch (Exception e) {
+                    Log.w(TAG, "💰 ⚠️ Fallo al enviar comando ESC/POS de caja: " + e.getMessage());
+                    return false;
+                }
+            } else {
+                Log.w(TAG, "💰 ⚠️ Fallback printer no disponible");
+                return false;
+            }
+            
+        } catch (Exception e) {
+            Log.e(TAG, "💰 ❌ Error abriendo caja con ESC/POS: " + e.getMessage());
+            return false;
+        }
+    }
+    
+
+
 }

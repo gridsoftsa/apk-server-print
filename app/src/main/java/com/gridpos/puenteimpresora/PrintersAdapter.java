@@ -3,7 +3,6 @@ package com.gridpos.puenteimpresora;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.RadioButton;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -39,18 +38,20 @@ public class PrintersAdapter extends RecyclerView.Adapter<PrintersAdapter.Printe
     public void onBindViewHolder(@NonNull PrinterViewHolder holder, int position) {
         UsbDevice printer = printers.get(position);
         
-        holder.deviceName.setText(printer.getDisplayName());
-        holder.deviceInfo.setText(printer.getDeviceInfo());
+        holder.printerName.setText(printer.getDisplayName());
+        holder.printerDetails.setText(printer.getDeviceInfo());
         
-        // Mostrar indicador si es impresora
-        if (printer.isPrinter()) {
-            holder.printerIndicator.setVisibility(View.VISIBLE);
+        // Mostrar estado de selección y si es impresora
+        if (position == selectedPosition) {
+            holder.printerStatus.setText("●");
+            holder.printerStatus.setTextColor(holder.itemView.getContext().getResources().getColor(android.R.color.holo_green_dark));
+        } else if (printer.isPrinter()) {
+            holder.printerStatus.setText("✓");
+            holder.printerStatus.setTextColor(holder.itemView.getContext().getResources().getColor(android.R.color.holo_blue_dark));
         } else {
-            holder.printerIndicator.setVisibility(View.GONE);
+            holder.printerStatus.setText("?");
+            holder.printerStatus.setTextColor(holder.itemView.getContext().getResources().getColor(android.R.color.darker_gray));
         }
-        
-        // Configurar RadioButton
-        holder.radioButton.setChecked(position == selectedPosition);
         
         // Listener para selección
         holder.itemView.setOnClickListener(v -> {
@@ -67,10 +68,6 @@ public class PrintersAdapter extends RecyclerView.Adapter<PrintersAdapter.Printe
             if (listener != null) {
                 listener.onPrinterSelected(printer, position);
             }
-        });
-        
-        holder.radioButton.setOnClickListener(v -> {
-            holder.itemView.performClick();
         });
     }
 
@@ -93,17 +90,15 @@ public class PrintersAdapter extends RecyclerView.Adapter<PrintersAdapter.Printe
     }
 
     static class PrinterViewHolder extends RecyclerView.ViewHolder {
-        RadioButton radioButton;
-        TextView deviceName;
-        TextView deviceInfo;
-        TextView printerIndicator;
+        TextView printerName;
+        TextView printerDetails;
+        TextView printerStatus;
 
         PrinterViewHolder(@NonNull View itemView) {
             super(itemView);
-            radioButton = itemView.findViewById(R.id.radioButton);
-            deviceName = itemView.findViewById(R.id.deviceName);
-            deviceInfo = itemView.findViewById(R.id.deviceInfo);
-            printerIndicator = itemView.findViewById(R.id.printerIndicator);
+            printerName = itemView.findViewById(R.id.printerNameText);
+            printerDetails = itemView.findViewById(R.id.printerDetailsText);
+            printerStatus = itemView.findViewById(R.id.printerStatusText);
         }
     }
 }

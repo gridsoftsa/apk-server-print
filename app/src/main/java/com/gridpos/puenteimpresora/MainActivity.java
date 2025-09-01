@@ -54,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
     private Button btnTestText;
     private Button btnTestImage;
     private Button btnTestQR;
+    private Button btnTestInvoice;  // 🧾 Botón factura dinámico
     private Button btnClearLog;
     
     // 🎯 Selector de tipo de impresora
@@ -724,18 +725,21 @@ public class MainActivity extends AppCompatActivity {
      */
     private void initializeTestButtons() {
         try {
+            // 🎯 Mapear IDs correctos del nuevo layout
             btnTestCash = findViewById(R.id.btnTestCash);
-            btnTestText = findViewById(R.id.btnTestText);
+            btnTestText = findViewById(R.id.btnSDKText);        // 📝 Texto dinámico
             btnTestImage = findViewById(R.id.btnTestImage);
-            btnTestQR = findViewById(R.id.btnTestQR);
+            btnTestQR = findViewById(R.id.btnSDKQR);           // 📱 QR + Caja dinámico
+            btnTestInvoice = findViewById(R.id.btnSDKInvoice); // 🧾 Factura dinámico
             btnClearLog = findViewById(R.id.btnClearLog);
 
-                    // Configurar listeners
-        btnTestCash.setOnClickListener(v -> testOpenCashDrawer());
-        btnTestText.setOnClickListener(v -> testPrintText());
-        btnTestImage.setOnClickListener(v -> testPrintImage());
-        btnTestQR.setOnClickListener(v -> testPrintQR());
-        btnClearLog.setOnClickListener(v -> clearLog());
+            // Configurar listeners con métodos dinámicos
+            btnTestCash.setOnClickListener(v -> testOpenCashDrawer());
+            btnTestText.setOnClickListener(v -> testPrinterText());     // Método dinámico
+            btnTestImage.setOnClickListener(v -> testPrintImage());
+            btnTestQR.setOnClickListener(v -> testPrinterQR());         // Método dinámico
+            btnTestInvoice.setOnClickListener(v -> testPrinterInvoice()); // Método dinámico
+            btnClearLog.setOnClickListener(v -> clearLog());
         
         // Agregar listener de doble click al estado para refrescar conexión
         statusText.setOnClickListener(v -> refreshPrinterConnection());
@@ -1978,16 +1982,36 @@ public class MainActivity extends AppCompatActivity {
      */
     private void testOpenCashDrawer() {
         try {
-            // Usar el método existente de abrir caja
-            if (usbPrinterManager != null) {
-                usbPrinterManager.openCashDrawer();
-                updateLog("💰 Caja registradora abierta");
+            addToLog("💰 Intentando abrir caja registradora...");
+            
+            // Usar el sistema de impresión universal POS3nStarPrinter
+            if (pos3nStarPrinter != null) {
+                // Verificar si estamos usando SDK 3nStar
+                if (currentPrinterType == PrinterType.THREEDNSTAR || 
+                    (currentPrinterType == PrinterType.AUTO && pos3nStarPrinter.isSDKMode())) {
+                    
+                    // Usar SDK 3nStar para abrir caja
+                    boolean success = pos3nStarPrinter.openCashDrawerWithSDK();
+                    if (success) {
+                        addToLog("💰 ✅ Caja abierta con SDK 3nStar");
+                    } else {
+                        addToLog("💰 ❌ Error abriendo caja con SDK 3nStar");
+                    }
+                } else {
+                    // Usar método ESC/POS estándar
+                    boolean success = pos3nStarPrinter.openCashDrawerWithESCPOS();
+                    if (success) {
+                        addToLog("💰 ✅ Caja abierta con ESC/POS");
+                    } else {
+                        addToLog("💰 ❌ Error abriendo caja con ESC/POS");
+                    }
+                }
             } else {
-                updateLog("⚠️ No se pudo abrir caja - USB no disponible");
+                addToLog("💰 ❌ Sistema de impresión no inicializado");
             }
         } catch (Exception e) {
             Log.e(TAG, "❌ Error abriendo caja", e);
-            updateLog("❌ Error abriendo caja: " + e.getMessage());
+            addToLog("💰 ❌ Error abriendo caja: " + e.getMessage());
         }
     }
     
