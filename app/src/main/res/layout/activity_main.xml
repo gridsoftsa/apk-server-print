@@ -1,66 +1,347 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#2C3E50"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:padding="32dp"
+    android:background="@color/background_primary"
+    android:fillViewport="true"
     tools:context=".MainActivity">
 
-    <ImageView
-        android:id="@+id/logoImageView"
-        android:layout_width="120dp"
-        android:layout_height="120dp"
-        android:layout_marginBottom="24dp"
-        android:src="@mipmap/ic_launcher" />
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
 
-    <TextView
-        android:id="@+id/titleText"
-        android:layout_width="wrap_content"
+    <!-- 🎯 HEADER MINIMALISTA -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="32dp">
+        
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@mipmap/ic_launcher"
+            android:layout_marginEnd="16dp" />
+        
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+            
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="GridPOS Printer"
+                android:textColor="@color/text_primary"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+                
+            <TextView
+                android:id="@+id/statusText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Iniciando..."
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
+                
+        </LinearLayout>
+        
+    </LinearLayout>
+
+    <!-- 🎯 CARD: TIPO DE IMPRESORA -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
-        android:text="Puente Impresora"
-        android:textColor="#FFFFFF"
-        android:textSize="28sp"
-        android:textStyle="bold" />
+        style="@style/CardStyle">
 
-    <View
-        android:id="@+id/divider"
-        android:layout_width="200dp"
-        android:layout_height="2dp"
-        android:layout_marginBottom="40dp"
-        android:background="#3498DB" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
 
-    <TextView
-        android:id="@+id/statusText"
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Tipo de Impresora"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="12dp" />
+
+            <Spinner
+                android:id="@+id/printerTypeSpinner"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="@drawable/spinner_background"
+                android:layout_marginBottom="12dp" />
+
+            <TextView
+                android:id="@+id/selectedPrinterText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Impresora seleccionada: Ninguna"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
+                android:background="@color/background_info"
+                android:padding="8dp"
+                android:drawableStart="@drawable/ic_info"
+                android:drawablePadding="8dp" />
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- 🎯 CARD: CONEXIÓN -->
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp"
-        android:background="#34495E"
-        android:padding="20dp"
-        android:text="Iniciando servicio de impresión..."
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        android:gravity="center" />
+        android:layout_marginBottom="16dp"
+        style="@style/CardStyle">
 
-    <TextView
-        android:id="@+id/instructionText"
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="16dp">
+                
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Conexión USB"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+                    
+                <TextView
+                    android:id="@+id/ipAddressText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="192.168.1.100:12345"
+                    android:textColor="@color/accent_primary"
+                    android:textSize="12sp"
+                    android:background="@color/background_success"
+                    android:padding="4dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+                    
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/activePrinterText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Ninguna conectada"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp"
+                android:background="@color/background_warning"
+                android:padding="12dp"
+                android:layout_marginBottom="12dp"
+                android:drawableStart="@drawable/ic_usb"
+                android:drawablePadding="8dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginBottom="12dp">
+
+                <Button
+                    android:id="@+id/btnRefreshPrinters"
+                    style="@style/ButtonSecondary"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:text="Buscar"
+                    android:drawableStart="@drawable/ic_refresh" />
+
+                <Button
+                    android:id="@+id/btnConnectPrinter"
+                    style="@style/ButtonPrimary"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:text="Conectar"
+                    android:drawableStart="@drawable/ic_connect" />
+
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/printersRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:maxHeight="120dp"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- 🎯 CARD: PRUEBAS -->
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp"
-        android:text="• Conecta la impresora por USB OTG\n• Mantén esta aplicación abierta\n• Abre Chrome y navega a tu aplicación web\n• Las impresiones se procesarán automáticamente"
-        android:textColor="#BDC3C7"
-        android:textSize="14sp"
-        android:lineSpacingExtra="4dp" />
+        android:layout_marginBottom="16dp"
+        style="@style/CardStyle">
 
-    <TextView
-        android:id="@+id/versionText"
-        android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Pruebas de Impresión"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="16dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
+
+                <Button
+                    android:id="@+id/btnSDKText"
+                    style="@style/ButtonTest"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="4dp"
+                    android:text="📝 Texto"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/btnSDKQR"
+                    style="@style/ButtonTest"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginEnd="4dp"
+                    android:text="📱 QR + Caja"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/btnSDKInvoice"
+                    style="@style/ButtonTest"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="4dp"
+                    android:text="🧾 Factura"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+
+            <!-- Botones adicionales en una segunda fila -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btnTestCash"
+                    style="@style/ButtonTest"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="4dp"
+                    android:text="💰 Caja"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/btnTestImage"
+                    style="@style/ButtonTest"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginEnd="4dp"
+                    android:text="🖼️ Imagen"
+                    android:textSize="12sp" />
+
+                <Button
+                    android:id="@+id/btnClearLog"
+                    style="@style/ButtonTest"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="4dp"
+                    android:text="🗑️ Limpiar"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- 🎯 CARD: LOG -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="v1.0"
-        android:textColor="#7F8C8D"
-        android:textSize="12sp" />
+        style="@style/CardStyle">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Actividad del Sistema"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="12dp" />
+
+            <ScrollView
+                android:id="@+id/logScrollView"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:background="@color/background_code"
+                android:padding="12dp">
+
+                <TextView
+                    android:id="@+id/logText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Sistema iniciado...\n"
+                    android:textColor="@color/text_code"
+                    android:textSize="11sp"
+                    android:fontFamily="monospace"
+                    android:lineSpacingExtra="2dp" />
+
+            </ScrollView>
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
 
 </LinearLayout>
+
+</ScrollView>

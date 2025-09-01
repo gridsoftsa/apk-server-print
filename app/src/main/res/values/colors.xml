@@ -1,10 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
+    <!-- 🎨 TEMA MINIMALISTA MODERNO -->
+    
+    <!-- Colores primarios -->
+    <color name="background_primary">#F8FAFC</color>     <!-- Blanco azulado muy suave -->
+    <color name="background_secondary">#FFFFFF</color>   <!-- Blanco puro -->
+    
+    <!-- Colores de texto -->
+    <color name="text_primary">#1E293B</color>          <!-- Gris oscuro azulado -->
+    <color name="text_secondary">#64748B</color>        <!-- Gris medio -->
+    <color name="text_tertiary">#94A3B8</color>         <!-- Gris claro -->
+    <color name="text_code">#22C55E</color>             <!-- Verde para logs -->
+    
+    <!-- Colores de acento -->
+    <color name="accent_primary">#3B82F6</color>        <!-- Azul moderno -->
+    <color name="accent_secondary">#8B5CF6</color>      <!-- Violeta -->
+    <color name="accent_success">#10B981</color>        <!-- Verde éxito -->
+    <color name="accent_warning">#F59E0B</color>        <!-- Naranja advertencia -->
+    <color name="accent_error">#EF4444</color>          <!-- Rojo error -->
+    
+    <!-- Fondos de información -->
+    <color name="background_info">#EFF6FF</color>       <!-- Azul muy claro -->
+    <color name="background_success">#ECFDF5</color>    <!-- Verde muy claro -->
+    <color name="background_warning">#FFFBEB</color>    <!-- Naranja muy claro -->
+    <color name="background_error">#FEF2F2</color>      <!-- Rojo muy claro -->
+    <color name="background_code">#0F172A</color>       <!-- Fondo oscuro para código -->
+    
+    <!-- Sombras y bordes -->
+    <color name="shadow_light">#1E293B10</color>        <!-- Sombra suave -->
+    <color name="border_light">#E2E8F0</color>          <!-- Borde claro -->
+    
+    <!-- 🎯 Material Design compatibility -->
+    <color name="purple_200">#BBDEFB</color>
+    <color name="purple_500">#3B82F6</color>
+    <color name="purple_700">#1E40AF</color>
+    <color name="teal_200">#81C784</color>
+    <color name="teal_700">#388E3C</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 </resources>

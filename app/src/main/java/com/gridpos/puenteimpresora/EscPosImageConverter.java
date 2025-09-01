@@ -13,76 +13,194 @@ public class EscPosImageConverter {
     private static final byte[] ESC = {0x1B};
     private static final byte[] GS = {0x1D};
     private static final byte[] INIT_PRINTER = {0x1B, 0x40}; // ESC @
-    private static final byte[] SELECT_BIT_IMAGE_MODE = {0x1B, 0x2A, 0x21}; // ESC * !
+    private static final byte[] CENTER_ALIGN = {0x1B, 0x61, 0x01}; // ESC a 1
+    private static final byte[] LEFT_ALIGN = {0x1B, 0x61, 0x00}; // ESC a 0
     private static final byte[] LINE_FEED = {0x0A};
-    private static final byte[] CUT_PAPER = {0x1D, 0x56, 0x42, 0x00}; // GS V B 0
+    private static final byte[] CUT_PAPER = {0x1D, 0x56, 0x00}; // GS V 0
 
     public static byte[] bitmapToEscPos(Bitmap bitmap) {
         try {
-            // Inicializar el stream de salida
+            Log.d(TAG, "🖼️ Iniciando conversión de imagen: " + bitmap.getWidth() + "x" + bitmap.getHeight());
+            
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             
-            // Comando de inicialización
+            // Inicializar impresora
             outputStream.write(INIT_PRINTER);
+            outputStream.write(CENTER_ALIGN); // Centrar imagen
             
-            // Redimensionar imagen si es necesario (máximo 576 pixels para impresoras de 80mm)
-            Bitmap processedBitmap = resizeBitmap(bitmap, 576);
+            // Redimensionar para impresora de 80mm (384 pixels de ancho óptimo)
+            Bitmap processedBitmap = resizeBitmapOptimal(bitmap, 384);
+            Log.d(TAG, "🔧 Imagen redimensionada a: " + processedBitmap.getWidth() + "x" + processedBitmap.getHeight());
             
-            // Convertir a monocromo
-            Bitmap monoBitmap = convertToMonochrome(processedBitmap);
+            // Convertir a monocromo con dithering mejorado
+            Bitmap monoBitmap = convertToMonochromeWithDithering(processedBitmap);
             
-            // Convertir a datos ESC/POS
-            byte[] imageData = convertBitmapToEscPosData(monoBitmap);
+            // Usar método raster más efectivo
+            byte[] imageData = convertBitmapToRasterData(monoBitmap);
             outputStream.write(imageData);
             
-            // Alimentar papel y cortar
-            outputStream.write(LINE_FEED);
+            // Restaurar alineación y alimentar papel
+            outputStream.write(LEFT_ALIGN);
             outputStream.write(LINE_FEED);
             outputStream.write(LINE_FEED);
             outputStream.write(CUT_PAPER);
             
+            Log.d(TAG, "✅ Conversión completada, " + outputStream.size() + " bytes totales");
             return outputStream.toByteArray();
             
         } catch (Exception e) {
-            Log.e(TAG, "Error convirtiendo imagen a ESC/POS", e);
+            Log.e(TAG, "❌ Error convirtiendo imagen a ESC/POS", e);
+            return createErrorFallback();
+        }
+    }
+
+    /**
+     * 🔧 Redimensionar imagen de manera óptima para impresoras térmicas
+     */
+    private static Bitmap resizeBitmapOptimal(Bitmap original, int targetWidth) {
+        int originalWidth = original.getWidth();
+        int originalHeight = original.getHeight();
+        
+        Log.d(TAG, "📐 Redimensionando desde " + originalWidth + "x" + originalHeight + " a ancho " + targetWidth);
+        
+        // Si ya es del tamaño correcto o menor, mantener proporción
+        if (originalWidth <= targetWidth) {
+            Log.d(TAG, "✅ Imagen ya es del tamaño correcto");
+            return original;
+        }
+        
+        // Calcular nueva altura manteniendo proporción
+        float ratio = (float) targetWidth / originalWidth;
+        int newHeight = Math.round(originalHeight * ratio);
+        
+        // Usar FILTER = true para mejor calidad en el redimensionamiento
+        Bitmap resized = Bitmap.createScaledBitmap(original, targetWidth, newHeight, true);
+        Log.d(TAG, "🎯 Imagen redimensionada a: " + resized.getWidth() + "x" + resized.getHeight());
+        
+        return resized;
+    }
+
+    /**
+     * 🎨 Convertir a monocromo con dithering mejorado
+     */
+    private static Bitmap convertToMonochromeWithDithering(Bitmap original) {
+        int width = original.getWidth();
+        int height = original.getHeight();
+        
+        Log.d(TAG, "🎨 Convirtiendo a monocromo con dithering: " + width + "x" + height);
+        
+        Bitmap monoBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
+        
+        // Array para dithering Floyd-Steinberg
+        float[][] luminanceArray = new float[width][height];
+        
+        // Calcular luminancia inicial
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                int pixel = original.getPixel(x, y);
+                int red = Color.red(pixel);
+                int green = Color.green(pixel);
+                int blue = Color.blue(pixel);
+                luminanceArray[x][y] = 0.299f * red + 0.587f * green + 0.114f * blue;
+            }
+        }
+        
+        // Aplicar dithering Floyd-Steinberg
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                float oldPixel = luminanceArray[x][y];
+                int newPixel = oldPixel > 128 ? 255 : 0;
+                float error = oldPixel - newPixel;
+                
+                monoBitmap.setPixel(x, y, newPixel == 255 ? Color.WHITE : Color.BLACK);
+                
+                // Distribuir error a píxeles vecinos
+                if (x + 1 < width) {
+                    luminanceArray[x + 1][y] += error * 7.0f / 16.0f;
+                }
+                if (y + 1 < height) {
+                    if (x - 1 >= 0) {
+                        luminanceArray[x - 1][y + 1] += error * 3.0f / 16.0f;
+                    }
+                    luminanceArray[x][y + 1] += error * 5.0f / 16.0f;
+                    if (x + 1 < width) {
+                        luminanceArray[x + 1][y + 1] += error * 1.0f / 16.0f;
+                    }
+                }
+            }
+        }
+        
+        Log.d(TAG, "✅ Conversión a monocromo completada");
+        return monoBitmap;
+    }
+
+    /**
+     * 🖨️ Convertir bitmap a datos raster ESC/POS (más efectivo)
+     */
+    private static byte[] convertBitmapToRasterData(Bitmap bitmap) {
+        try {
+            Log.d(TAG, "🖨️ Convirtiendo a datos raster ESC/POS");
+            
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            
+            int width = bitmap.getWidth();
+            int height = bitmap.getHeight();
+            int widthBytes = (width + 7) / 8; // Redondear hacia arriba a múltiplo de 8
+            
+            Log.d(TAG, "📏 Dimensiones raster: " + width + "x" + height + ", bytes por línea: " + widthBytes);
+            
+            // Comando raster bit image: GS v 0
+            outputStream.write(GS);
+            outputStream.write(0x76); // v
+            outputStream.write(0x30); // 0 (modo normal)
+            
+            // Ancho en bytes (low byte, high byte)
+            outputStream.write(widthBytes & 0xFF);
+            outputStream.write((widthBytes >> 8) & 0xFF);
+            
+            // Altura en píxeles (low byte, high byte)
+            outputStream.write(height & 0xFF);
+            outputStream.write((height >> 8) & 0xFF);
+            
+            // Convertir imagen línea por línea
+            for (int y = 0; y < height; y++) {
+                for (int byteIndex = 0; byteIndex < widthBytes; byteIndex++) {
+                    int byteValue = 0;
+                    
+                    for (int bit = 0; bit < 8; bit++) {
+                        int x = byteIndex * 8 + bit;
+                        
+                        if (x < width) {
+                            int pixel = bitmap.getPixel(x, y);
+                            if (pixel == Color.BLACK) {
+                                byteValue |= (0x80 >> bit); // Bit más significativo primero
+                            }
+                        }
+                    }
+                    
+                    outputStream.write(byteValue);
+                }
+            }
+            
+            Log.d(TAG, "✅ Datos raster generados: " + outputStream.size() + " bytes");
+            return outputStream.toByteArray();
+            
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Error en conversión raster", e);
             return new byte[0];
         }
     }
 
-    private static Bitmap resizeBitmap(Bitmap original, int maxWidth) {
-        if (original.getWidth() <= maxWidth) {
-            return original;
+    /**
+     * 🚨 Crear mensaje de error como fallback
+     */
+    private static byte[] createErrorFallback() {
+        try {
+            String errorMsg = "ERROR DE IMPRESION\nImagen no procesable\n\n";
+            return errorMsg.getBytes("UTF-8");
+        } catch (Exception e) {
+            return "ERROR\n\n".getBytes();
         }
-        
-        float ratio = (float) maxWidth / original.getWidth();
-        int newHeight = (int) (original.getHeight() * ratio);
-        
-        return Bitmap.createScaledBitmap(original, maxWidth, newHeight, true);
-    }
-
-    private static Bitmap convertToMonochrome(Bitmap original) {
-        int width = original.getWidth();
-        int height = original.getHeight();
-        
-        Bitmap monoBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
-        
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
-                int pixel = original.getPixel(x, y);
-                
-                // Calcular la luminancia
-                int red = Color.red(pixel);
-                int green = Color.green(pixel);
-                int blue = Color.blue(pixel);
-                int luminance = (int) (0.299 * red + 0.587 * green + 0.114 * blue);
-                
-                // Convertir a blanco o negro basado en un umbral
-                int newPixel = luminance > 128 ? Color.WHITE : Color.BLACK;
-                monoBitmap.setPixel(x, y, newPixel);
-            }
-        }
-        
-        return monoBitmap;
     }
 
     private static byte[] convertBitmapToEscPosData(Bitmap bitmap) {
